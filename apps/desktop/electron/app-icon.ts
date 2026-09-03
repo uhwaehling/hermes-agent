@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import path from 'node:path'
 
 import { nativeImage } from 'electron'
@@ -27,14 +26,6 @@ export type IconProbe = (filePath: string) => boolean
 
 /** Eager-decoding default probe: the file must decode to a non-empty image. */
 export function decodingFileProbe(filePath: string): boolean {
-  try {
-    if (!fs.statSync(filePath).isFile()) {
-      return false
-    }
-  } catch {
-    return false
-  }
-
   try {
     return !nativeImage.createFromPath(filePath).isEmpty()
   } catch {
