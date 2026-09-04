@@ -4660,17 +4660,15 @@ function resolveRendererIndex() {
   const asarIndex = path.join(APP_ROOT, 'dist', 'index.html')
   const webDistIndex = path.join(resolveWebDist(), 'index.html')
 
-  // A packaged build ships dist/ twice: inside app.asar AND — because
-  // asarUnpack lists dist/** — beside it in app.asar.unpacked. Prefer the
-  // unpacked tree, matching the resolveWebDist()/unpackedPathFor precedent:
-  // it is the copy the embedded dashboard serves and the copy a repair
-  // rewrites, while pointing the window at the asar-internal index.html is
-  // exactly how lazy chunks end up fetched from a path that cannot serve
-  // them (#93479). Every window loader shares this resolver (main, overlay,
-  // quick), so the ordering fix covers all of them. Dev is unchanged:
-  // unpackedPathFor is a no-op outside an asar, so both candidates collapse
-  // to APP_ROOT/dist and the original order is preserved.
-  const candidates = IS_PACKAGED ? [webDistIndex, asarIndex] : [asarIndex, webDistIndex]
+  // Packaged builds serve the renderer from app.asar.unpacked. Do not probe
+  // the copy inside app.asar: Electron's ASAR fs shim implements statSync()
+  // for archive entries by constructing fs.Stats objects, which triggers
+  // Node's DEP0180 deprecation warning. The unpacked copy is the canonical
+  // renderer for packaged builds.
+  //
+  // Dev is unchanged: outside a packaged app, preserve the existing fallback
+  // order and allow APP_ROOT/dist to be used.
+  const candidates = IS_PACKAGED ? [webDistIndex] : [asarIndex, webDistIndex]
   const present = [...new Set(candidates)].filter(fileExists)
 
   // index.html and the hashed chunks it names are one generation. An update
